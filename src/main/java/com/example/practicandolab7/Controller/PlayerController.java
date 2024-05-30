@@ -92,7 +92,7 @@ public class PlayerController {
             return ResponseEntity.badRequest().body(er);
         }
     }
-    //Gestionamos errores del post
+    //Gestionamos errores del POST y PUT
     @ExceptionHandler({HttpMessageNotReadableException.class} )
     public Object gestionExcetion (HttpServletRequest request){
         HashMap<String , Object> responseMap = new HashMap<>();
@@ -138,10 +138,33 @@ public class PlayerController {
             return ResponseEntity.badRequest().body(responseMap);
         }
     }
-
-
-
-
+    //Asumimos borrado por id
+    @DeleteMapping(value = "/player/delete/{id}")
+    public Object borrar(@PathVariable("id") String idPlayer) {
+        HashMap<String, Object> responseMap = new HashMap<>();
+        try {
+            int id = Integer.parseInt(idPlayer);
+            if (playerRepository.existsById(id)) {
+                String region =  playerRepository.findById(id).get().getRegion();
+                playerRepository.deleteById(id);
+                playerRepository.reCalculateRelativePosition(region);
+                responseMap.put("estado", "borrado exitoso");
+                return ResponseEntity.ok(responseMap);
+            } else {
+                responseMap.put("estado", "error");
+                responseMap.put("msg", "no se encontró el producto con id: " + id);
+                return ResponseEntity.badRequest().body(responseMap);
+            }
+        } catch (NumberFormatException ex) {
+            responseMap.put("estado", "error");
+            responseMap.put("msg", "El ID debe ser un número");
+            return ResponseEntity.badRequest().body(responseMap);
+        }
     }
+
+
+
+
+}
 
 
