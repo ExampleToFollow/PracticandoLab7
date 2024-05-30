@@ -20,7 +20,7 @@ public class PlayerController {
     }
     //Listado del leaderboard:
     @GetMapping(value = "/player/leaderBoard" )
-    public Object listLeaderBoardByRegion(@RequestParam(value = "region" ,required = false ,defaultValue = "Europa") String region){
+        public Object listLeaderBoardByRegion(@RequestParam(value = "region" ,required = false ,defaultValue = "Europa") String region){
         //En caso encuentre la region - no haya errores
         try {
             if ((Arrays.asList("Américas", "Europa", "SE Asíatico", "China")).contains(region)) {
@@ -98,7 +98,7 @@ public class PlayerController {
         HashMap<String , Object> responseMap = new HashMap<>();
         if(request.getMethod().equals("POST") || request.getMethod().equals("PUT") ){
             responseMap.put("estado" , "error");
-            responseMap.put("msg" , "debe enviar un producto");
+            responseMap.put("msg" , "Auxilio");
         }
         return ResponseEntity.badRequest().body(responseMap);
     }
@@ -161,10 +161,6 @@ public class PlayerController {
             return ResponseEntity.badRequest().body(responseMap);
         }
     }
-
-
-
-
 }
 
 
