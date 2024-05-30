@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 
 public interface PlayerRepository extends JpaRepository<Player,Integer>  {
+
+
     @Query(nativeQuery = true, value = "select *  from  players p  where region= ?1  ORDER BY mmr desc limit 10;\n")
     List<Player> findLeaderBoardPlayersByRegion(String region);
     //Si quizás se refiere con su posicion relativa de ese tablero:
@@ -19,8 +21,8 @@ public interface PlayerRepository extends JpaRepository<Player,Integer>  {
 
     @Modifying
     @Transactional
-    @Query(nativeQuery = true,value = "UPDATE players p JOIN ( SELECT playerId AS id, ROW_NUMBER() OVER (ORDER BY mmr DESC) AS newPosition FROM players ) pe ON p.playerId = pe.id SET p.position = pe.newPosition")
-    void reCalculateAbsolutPosition();
+    @Query(nativeQuery = true,value = "UPDATE players p JOIN ( SELECT playerId AS id, ROW_NUMBER() OVER (ORDER BY mmr DESC) AS newPosition FROM players where region = ?1 ) pe ON p.playerId = pe.id SET p.position = pe.newPosition")
+    void reCalculateRelativePosition(String region);
 
     @Modifying
     @Transactional
