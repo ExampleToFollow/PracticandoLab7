@@ -2,9 +2,11 @@ package com.example.practicandolab7.Controller;
 
 import com.example.practicandolab7.Entity.Player;
 import com.example.practicandolab7.Repository.PlayerRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -47,8 +49,6 @@ public class PlayerController {
             return ResponseEntity.badRequest().body(er);
         }
     }
-
-
     @PostMapping(value = "/player/addBody" )
     public Object addPlayerRequestBody(@RequestBody Player player ,
             @RequestParam(value ="fetchId",required = false ) boolean fetchId) {
@@ -90,6 +90,52 @@ public class PlayerController {
             er.put("error","ocurrio un error inesperado");
             er.put("date",""+ LocalDateTime.now());
             return ResponseEntity.badRequest().body(er);
+        }
+    }
+    //Gestionamos errores del post
+    @ExceptionHandler({HttpMessageNotReadableException.class} )
+    public Object gestionExcetion (HttpServletRequest request){
+        HashMap<String , Object> responseMap = new HashMap<>();
+        if(request.getMethod().equals("POST") || request.getMethod().equals("PUT") ){
+            responseMap.put("estado" , "error");
+            responseMap.put("msg" , "debe enviar un producto");
+        }
+        return ResponseEntity.badRequest().body(responseMap);
+    }
+
+    @PutMapping(value="/player/update")
+    public Object updateMmrPlayer(@RequestBody Player player ) {
+        HashMap<String, Object> responseMap = new HashMap<>();
+        if (player.getId() != null && player.getId() > 0) {
+            Optional<Player> optPlayer = playerRepository.findById(player.getId());
+            if (optPlayer.isPresent()) {
+                if(player.getMmr() != null  && player.getMmr()>0){
+                    Player auxPlayer = optPlayer.get();
+                    auxPlayer.setMmr(player.getMmr());
+                    Player newPlayer = playerRepository.save(auxPlayer);
+                    playerRepository.reCalculateRelativePosition(newPlayer.getRegion());
+                    responseMap.put("estado", "actualizado");
+                    return ResponseEntity.ok(responseMap);
+                }else {
+                    if(player.getMmr() == null){
+                        responseMap.put("estado", "error");
+                        responseMap.put("msg", "debe ingresar un valor de mmr");
+                        return ResponseEntity.badRequest().body(responseMap);
+                    }else{
+                        responseMap.put("estado", "error");
+                        responseMap.put("msg", "debe ingresar un valor de mmr mayor a 0");
+                        return ResponseEntity.badRequest().body(responseMap);
+                    }
+                }
+            } else {
+                responseMap.put("estado", "error");
+                responseMap.put("msg", "El jugador a actualizar no existe");
+                return ResponseEntity.badRequest().body(responseMap);
+            }
+        } else {
+            responseMap.put("estado", "error");
+            responseMap.put("msg", "Debe enviar un ID");
+            return ResponseEntity.badRequest().body(responseMap);
         }
     }
 
