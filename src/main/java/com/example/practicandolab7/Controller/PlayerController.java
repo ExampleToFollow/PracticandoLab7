@@ -2,10 +2,10 @@ package com.example.practicandolab7.Controller;
 
 import com.example.practicandolab7.Entity.Player;
 import com.example.practicandolab7.Repository.PlayerRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -17,7 +17,7 @@ public class PlayerController {
         this.playerRepository = playerRepository;
     }
     //Listado del leaderboard:
-    @GetMapping("/player/leaderBoard")
+    @GetMapping(value = "/player/leaderBoard" )
     public Object listLeaderBoardByRegion(@RequestParam(value = "region" ,required = false ,defaultValue = "Europa") String region){
         //En caso encuentre la region - no haya errores
         try {
@@ -49,5 +49,53 @@ public class PlayerController {
     }
 
 
+    @PostMapping(value = "/player/addBody" )
+    public Object addPlayerRequestBody(@RequestBody Player player ,
+            @RequestParam(value ="fetchId",required = false ) boolean fetchId) {
+        try {
+            //Validar que sea una región valida , validar que el mmr sea un número entero mayor a cero
+            if (player.getMmr() > 0 && (Arrays.asList("Américas", "Europa", "SE Asíatico", "China")).contains(player.getRegion())) {
+                try {
+                    Player newPlayer = playerRepository.save(player);
+                    playerRepository.reCalculateRelativePosition(player.getRegion());
+                    LinkedHashMap<String, Object> responseMap = new LinkedHashMap<String, Object>();
+                    if (fetchId) {
+                        responseMap.put("id", newPlayer.getId());
+                    }
+                    responseMap.put("estado", "Creado");
+                    return ResponseEntity.status(HttpStatus.CREATED).body(responseMap);
+                } catch (Exception e) {
+                    HashMap<String, Object> er = new HashMap<>();
+                    er.put("error", "ocurrio un error inesperado");
+                    er.put("date", "" + LocalDateTime.now());
+                    return ResponseEntity.badRequest().body(er);
+                }
+            } else {
+                //Gestionamos error
+                if (!(Arrays.asList("Américas", "Europa", "SE Asíatico", "China")).contains(player.getRegion())) {
+                    HashMap<String, Object> er = new HashMap<>();
+                    er.put("error", "Se ingreso una region no valida");
+                    er.put("date", "" + LocalDateTime.now());
+                    return ResponseEntity.badRequest().body(er);
+                } else if (player.getMmr() < 0) {
+                    HashMap<String, Object> er = new HashMap<>();
+                    er.put("error", "Se ingreso una cantidad negativa");
+                    er.put("date", "" + LocalDateTime.now());
+                    return ResponseEntity.badRequest().body(er);
+                }
+            }
+            return ResponseEntity.badRequest().body("");
+        }catch(Exception errorFinal) {
+            HashMap<String, Object> er = new HashMap<>();
+            er.put("error","ocurrio un error inesperado");
+            er.put("date",""+ LocalDateTime.now());
+            return ResponseEntity.badRequest().body(er);
+        }
+    }
 
-}
+
+
+
+    }
+
+
